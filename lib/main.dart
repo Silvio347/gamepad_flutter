@@ -1,8 +1,6 @@
-import 'dart:convert';
-import 'dart:io'; // Para usar o UDP no Dart
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:vector_math/vector_math_64.dart' as vec;
 
 void main() {
   runApp(
@@ -23,11 +21,11 @@ class _GamepadScreenState extends State<GamepadScreen> {
   bool isPressed = false;
   RawDatagramSocket? udpSocket;
   String serverIp = '';
-  final int discoveryPort = 4211; // Para descobrir o servidor
-  final int commandPort = 4210; // Para enviar comandos
+  final int discoveryPort = 4211; // Server discovery port
+  final int commandPort = 4210; // Command port
   DateTime lastSendLeft = DateTime.now();
   DateTime lastSendRight = DateTime.now();
-  final Duration sendInterval = Duration(milliseconds: 10); // ajuste aqui
+  final Duration sendInterval = Duration(milliseconds: 10); 
 
   @override
   void initState() {
@@ -35,12 +33,11 @@ class _GamepadScreenState extends State<GamepadScreen> {
     _initSocket();
   }
 
-  // Inicializa o socket UDP
+  // Init UDP socket and send discovery message
   void _initSocket() async {
     udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
     udpSocket!.broadcastEnabled = true;
 
-    // Envia broadcast para descobrir o servidor
     String discoveryMessage = "who-is-pc";
     udpSocket!.send(
       discoveryMessage.codeUnits,
@@ -48,7 +45,6 @@ class _GamepadScreenState extends State<GamepadScreen> {
       discoveryPort,
     );
 
-    // Aguarda resposta
     udpSocket!.listen((event) {
       if (event == RawSocketEvent.read) {
         Datagram? datagram = udpSocket!.receive();
@@ -57,7 +53,7 @@ class _GamepadScreenState extends State<GamepadScreen> {
         String message = String.fromCharCodes(datagram.data).trim();
         if (message == "esp32-discovery") {
           setState(() {
-            // Define o IP do servidor como o IP de origem da resposta
+            // Define the server IP address when the discovery message is received
             serverIp = datagram.address.address;
           });
           print("Servidor descoberto: $serverIp");
@@ -67,12 +63,11 @@ class _GamepadScreenState extends State<GamepadScreen> {
     });
   }
 
-  // Envia a mensagem via UDP
+  // send UDP message to the server
   void _sendUdpMessage(String message) {
     if (serverIp.isEmpty) return;
 
     if (udpSocket != null) {
-      // Enviar dados via UDP utilizando a instância udpSocket
       final int result = udpSocket!.send(
         message.codeUnits,
         InternetAddress(serverIp),
@@ -179,7 +174,6 @@ class _GamepadScreenState extends State<GamepadScreen> {
   Widget _buildActionButton() {
     return GestureDetector(
       onTap: () {
-        debugPrint("Botão pressionado");
         setState(() {
           isPressed = true;
         });
@@ -241,14 +235,14 @@ class _GamepadScreenState extends State<GamepadScreen> {
                   icon: const Icon(Icons.more_vert, color: Colors.white),
                   color: const Color(0xFF1E1E2E),
                   onSelected: (value) {
-                    if (value == 'sensibilidade') {
+                    if (value == 'Sensitivity') {
                       showDialog(
                         context: context,
                         builder:
                             (_) => AlertDialog(
                               backgroundColor: const Color(0xFF2E2E3E),
                               title: const Text(
-                                "Alterar Sensibilidade",
+                                "Change Sensitivity",
                                 style: TextStyle(color: Colors.white),
                               ),
                               content: Column(
@@ -277,7 +271,7 @@ class _GamepadScreenState extends State<GamepadScreen> {
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
-                                  child: const Text("Fechar"),
+                                  child: const Text("Close"),
                                 ),
                               ],
                             ),
@@ -287,9 +281,9 @@ class _GamepadScreenState extends State<GamepadScreen> {
                   itemBuilder:
                       (context) => [
                         const PopupMenuItem(
-                          value: 'sensibilidade',
+                          value: 'Sensitivity',
                           child: Text(
-                            "Alterar Sensibilidade",
+                            "Change Sensitivity",
                             style: TextStyle(color: Colors.white70),
                           ),
                         ),
@@ -366,10 +360,8 @@ class _GamepadScreenState extends State<GamepadScreen> {
       onTap: () {
         if (label == "Start") {
           _sendUdpMessage("p");
-          debugPrint("Start pressionado → Enviado: p");
         } else if (label == "Select") {
           _sendUdpMessage("s");
-          debugPrint("Select pressionado");
         }
       },
       child: Container(
